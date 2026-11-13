@@ -5,17 +5,23 @@
 
 void testLed();
 
-int main(argc, char* argv[]) {
+int main() {
   gpioInitialise();
+  if (gpioInitialise() < 0) {
+    printf("Failed to initialize pigpio\n");
+    return 1;
+  }
   gpioSetMode(PIN, PI_OUTPUT);
 
   testLed();
+  gpioTerminate();
+  return 0;
 }
 
 void testLed() {
-  gpioWrite(Pin, 1); //LED ON
+  gpioWrite(PIN, 1); //LED ON
   getchar();
-  gpioWrite(Pin, 0);
-  printf("LED test complete");
+  gpioWrite(PIN, 0);
+  printf("LED test complete\n");
   getchar();
 }
