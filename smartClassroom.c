@@ -1,56 +1,124 @@
+
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <pigpio.h>
+
 #define PIN 17
 
-void testLed();
-
 int main() {
-  gpioInitialise();
-  if (gpioInitialise() < 0) {
-    printf("Failed to initialize pigpio\n");
-    return 1;
-  }
-  gpioSetMode(PIN, PI_OUTPUT);
+    float temperature;
+    float total = 0;
+    int count = 0;
 
-  testLed();
+    // Default acceptable temperature range
+    float minTemp = 68;
+    float maxTemp = 76;
 
-  printf("===================================\n");
-  printf("  SMART CLASSROOM COMFORT MONITOR  \n");
-  printf("===================================\n");
+    FILE *file;
+    FILE *statusFile;
 
+    // Initialize Raspberry Pi GPIO
+    if (gpioInitialise() < 0) {
+        printf("GPIO initialization failed.\n");
+        return 1;
+    }
 
-  // Menu Run
-  while(input != 4) {
-    printf("MENU:\n");
-    printf("1. Enter temperature reading\n");
-    printf("2. Display previous readings\n");
-    printf("3. Display average temperature\n");
-    printf("4. Exit");
-    printf("Enter your Menu Choice: ");
+    gpioSetMode(PIN, PI_OUTPUT);
 
-    scanf("%d", &input);
-    if(input == 1)
-      enterReading();
-    else if(input == 2)
-      displayReadings();
-    else if(input == 3)
-      displayAvg();
-    else if(input == 4)
-      continue;
-    else
-      printf("\n\nERROR: INVALID INPUT. ENTER INTEGER (1-4)\n\n");
-  }
+    // Create temperature log
+    file = fopen("temperature_log.csv", "w");
 
-  
-  gpioTerminate();
-  return 0;
-}
+    if (file == NULL) {
+        printf("Could not open temperature file.\n");
+        gpioTerminate();
+        return 1;
+    }
 
-void testLed() {
-  gpioWrite(PIN, 1); //LED ON
-  getchar();
-  gpioWrite(PIN, 0);
-  printf("LED test complete\n");
-  getchar();
+    fprintf(file, "Temperature,Status\n");
+
+    printf("SMART CLASSROOM COMFORT MONITOR\n");
+    printf("Acceptable range: %.1f - %.1f F\n", minTemp, maxTemp);
+    printf("Enter -1 to finish.\n\n");
+
+    while (1) {
+        printf("Would you like to change the current acceptable range?");
+        printf("1. Yes");
+        printf("2. No");
+
+        int input;
+        printf("Enter either 1 or 2: ");
+        scanf("%d", &input);
+        if (input == 1) {
+          printf("Enter the new maximum temperature in Fahrenheit: ");
+          scanf("%f", &maxTemp);
+          printf("Enter the new minimum temperature in Fahrenheit: ");
+          scanf("%f", &minTemp);
+
+          printf("New temperature range created!");
+          printf("Acceptable range: %.1f - %.1f F\n", minTemp, maxTemp);
+        } 
+      
+        printf("Enter classroom temperature: ");
+        if (scanf("%f", &temperature) != 1) {
+            printf("Invalid input. Please enter an integer.\n");
+            int ch;
+            while ((ch = getchar()) != '\n' && ch != EOF) {}
+            continue;
+        }
+
+        if (temperature == -1) {
+            break;
+        }
+
+        total += temperature;
+        count++;
+
+        if (temperature >= minTemp && temperature <= maxTemp) {
+
+            printf("Status: NORMAL\n");
+            printf("Warning LED: OFF\n");
+
+            gpioWrite(PIN, 0);
+            fprintf(file, "%.1f,NORMAL\n", temperature);
+
+            statusFile = fopen("status.txt", "w");
+            if (statusFile != NULL) {
+                fprintf(statusFile, "NORMAL");
+                fclose(statusFile);
+            }
+
+        } else {
+
+            printf("Status: WARNING\n");
+            printf("Warning LED: ON\n");
+
+            gpioWrite(PIN, 1);
+            fprintf(file, "%.1f,WARNING\n", temperature);
+
+            statusFile = fopen("status.txt", "w");
+            if (statusFile != NULL) {
+                fprintf(statusFile, "WARNING");
+                fclose(statusFile);
+            }
+        }
+
+        printf("\n");
+    }
+
+    fclose(file);
+
+    // Display average temperature
+    if (count > 0) {
+        printf("Average temperature: %.2f F\n",
+               total / count);
+    } else {
+        printf("No temperatures were recorded.\n");
+    }
+
+    gpioWrite(PIN, 0);
+    gpioTerminate();
+
+    printf("Temperature monitoring complete.\n");
+
+    return 0;
 }
