@@ -1,11 +1,12 @@
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <pigpio.h>
 
 #define PIN 17
 
-int main() {
+int main(int argc, char *argv[]) {
+    gpioInitialise();
     float temperature;
     float total = 0;
     int count = 0;
@@ -38,12 +39,12 @@ int main() {
 
     printf("SMART CLASSROOM COMFORT MONITOR\n");
     printf("Acceptable range: %.1f - %.1f F\n", minTemp, maxTemp);
-    printf("Enter -1 to finish.\n\n");
+    
 
     while (1) {
-        printf("Would you like to change the current acceptable range?");
-        printf("1. Yes");
-        printf("2. No");
+        printf("Would you like to change the current acceptable range?\n");
+        printf("1. Yes\n");
+        printf("2. No\n");
 
         int input;
         printf("Enter either 1 or 2: ");
@@ -58,6 +59,7 @@ int main() {
           printf("Acceptable range: %.1f - %.1f F\n", minTemp, maxTemp);
         } 
       
+        printf("Enter -1 to finish.\n\n");
         printf("Enter classroom temperature: ");
         if (scanf("%f", &temperature) != 1) {
             printf("Invalid input. Please enter an integer.\n");
