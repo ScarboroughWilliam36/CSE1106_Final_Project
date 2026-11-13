@@ -14,6 +14,35 @@ int main() {
   gpioSetMode(PIN, PI_OUTPUT);
 
   testLed();
+
+  printf("===================================\n");
+  printf("  SMART CLASSROOM COMFORT MONITOR  \n");
+  printf("===================================\n");
+
+
+  // Menu Run
+  while(input != 4) {
+    printf("MENU:\n");
+    printf("1. Enter temperature reading\n");
+    printf("2. Display previous readings\n");
+    printf("3. Display average temperature\n");
+    printf("4. Exit");
+    printf("Enter your Menu Choice: ");
+
+    scanf("%d", &input);
+    if(input == 1)
+      enterReading();
+    else if(input == 2)
+      displayReadings();
+    else if(input == 3)
+      displayAvg();
+    else if(input == 4)
+      continue;
+    else
+      printf("\n\nERROR: INVALID INPUT. ENTER INTEGER (1-4)\n\n");
+  }
+
+  
   gpioTerminate();
   return 0;
 }
